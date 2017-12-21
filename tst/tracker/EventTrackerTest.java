@@ -43,21 +43,44 @@ public class EventTrackerTest {
 		eventTracker = new EventTracker(LIMIT);
 	}
 	
+	// When invoked with negative argument x, getNumOccurrences method should 
+	// throw an IllegalArgumentException
 	@Test(expected=IllegalArgumentException.class)
 	public void testGetNumOccurrencesForInvalidNegativeInput() {
 		eventTracker.getNumOccurrences(-1);
 	}
 	
+	// When invoked with argument x > LIMIT, getNumOccurrences method
+	// should throw an IllegalArgumentException
 	@Test(expected=IllegalArgumentException.class)
 	public void testGetNumOccurrencesForInvalidPositiveInput() {
-		eventTracker.getNumOccurrences(1000);
+		eventTracker.getNumOccurrences(LIMIT*2);
 	}
 	
+	// When invoked with argument 0, getNumOccurrences method should return 0
 	@Test
-	public void testGetNumOccurrencesAtStart() {
-		assertEquals(0, eventTracker.getNumOccurrences(5));
+	public void testGetNumOccurrencesForInputArgZero() {
+		assertEquals(0, eventTracker.getNumOccurrences(0));
 	}
 	
+	// When invoked with valid positive argument x > current time t, 
+	// getNumOccurrences method should return getNumOccurrences(t)
+	@Test
+	public void testGetNumOccurrencesForInputArgHigherThanCurrentTime() {
+		List<Integer> testEventCountList = getEmptyEventCountList();
+		testEventCountList.set(10, 100);
+		try {
+			// Simulate user-signaling at time t = 10 s
+			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
+			// Simulate scenario where current time t = 15 s
+			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, 15);
+			assertEquals(100, eventTracker.getNumOccurrences(30));
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// This test simulates user-signaling without invoking signalEventOccurrence method
 	@Test
 	public void testGetNumOccurrencesWithPopulatedEventCountArray() {
 		List<Integer> testEventCountList = getEmptyEventCountList();
@@ -68,8 +91,10 @@ public class EventTrackerTest {
 		testEventCountList.set(299, 2);
 		
 		try {
+			// Simulate user-signaling at various points in time
 			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
-			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, LIMIT);
+			// Simulate scenario where current time = <LIMIT> s
+			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, LIMIT-1);
 			assertEquals(expectedEventCount, eventTracker.getNumOccurrences(numSecondsInTimeInterval));
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
@@ -88,6 +113,7 @@ public class EventTrackerTest {
 		});	
 	}
 	
+	// This test simulates user-signaling by invoking signalEventOccurrence method
 	@Test
 	public void testSignalEventOccurrence() {
 		try {
@@ -96,14 +122,17 @@ public class EventTrackerTest {
 			PowerMockito.doCallRealMethod().when(eventTracker).signalEventOccurrence();
 			PowerMockito.doCallRealMethod().when(eventTracker).getNumOccurrences(Matchers.anyInt());
 
+			// Simulate 10 incidents of user-signaling
 			IntStream.range(0, 10).forEach(i -> eventTracker.signalEventOccurrence());
-
-			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, 5);
+			// Simulate scenario where current time = 4 s
+			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, 4);
 			assertEquals(10, eventTracker.getNumOccurrences(5));
 
+			// Simulate 10 more incidents of user-signaling
+			// (for a total of 20 incidents from start time)
 			IntStream.range(0, 10).forEach(i -> eventTracker.signalEventOccurrence());
-			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, 10);
-			
+			// Simulate scenario where current time = 9 s
+			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, 9);
 			assertEquals(20, eventTracker.getNumOccurrences(10));
 			
 		} catch (IllegalArgumentException | IllegalAccessException e) {
@@ -111,6 +140,8 @@ public class EventTrackerTest {
 		}
 	}
 	
+	// Test helper method used to mock private field <eventCountList> in EventTracker
+	// instance in test methods
 	private List<Integer> getEmptyEventCountList() {
 		return Arrays.stream(new int[LIMIT]).boxed().collect(Collectors.toList());
 	}
