@@ -4,7 +4,7 @@ This project is a Java program that helps track the number of events that happen
 
 ## Dependencies
 
-This project runs on Java 8, and `lib` directory contains the JAR files that need to be added to the project build path.
+This project runs on Java 8, and the `lib` directory contains the JAR files that need to be added to the project build path.
 
 ## Source Code
 
@@ -12,7 +12,7 @@ In the `EventTracker` class, the constructor initializes a `Timer` instance that
 That is, the inner class `EventTrackerTask` implements the abstract `TimerTask` class, overriding the `run` method to increment the time counter by 1, and, once the time counter has reached the upper bound `LIMIT`, to reset the time counter to 0 and clear the record of event occurrences.
 
 The user can signal that the event has occurred, by invoking the public method `signalEventOccurrence()`. The record of occurrences of the event is stored in the private variable, `eventCountList`, which is initialized as an empty `List` of size `LIMIT`, and updated as the user signals that the event has 
-occurred. For example, if the user signals 5 times at time t = 0 and 20 times at t = 10, the element at index 0 of `eventCountList` is set to 5, and the element at index 10 is set to 20.
+occurred. For example, if the user signals 5 times at time t = 0 s and 20 times at t = 10 s, the element at index 0 of `eventCountList` is set to 5, and the element at index 10 is set to 20.
 
 The user can request the number of event occurrences in the past *x* seconds by making the method call `getNumOccurrences(x)`, where *x* can be up to `LIMIT` (inclusive). 
 
