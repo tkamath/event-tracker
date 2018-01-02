@@ -2,10 +2,10 @@ package tracker;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -67,23 +67,28 @@ public class EventTrackerTest {
 	// getNumOccurrences method should return getNumOccurrences(t)
 	@Test
 	public void testGetNumOccurrencesForInputArgHigherThanCurrentTime() {
-		List<Integer> testEventCountList = getEmptyEventCountList();
-		testEventCountList.set(10, 100);
+		List<Integer> testEventCountList = new ArrayList<>();
+		// Simulate current time t = 9 s
+		IntStream.range(0, 9).forEach(x -> testEventCountList.add(0));
+		// Simulate 100 instances of user-signaling at time t = 9 s
+		testEventCountList.add(100);
+		// Simulate current time t = 15 s
+		IntStream.range(0, 5).forEach(x -> testEventCountList.add(0));
+		
 		try {
-			// Simulate user-signaling at time t = 10 s
 			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
-			// Simulate scenario where current time t = 15 s
-			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, 15);
 			assertEquals(100, eventTracker.getNumOccurrences(30));
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	// This test simulates user-signaling without invoking signalEventOccurrence method
+//	 This test simulates user-signaling without invoking signalEventOccurrence method
 	@Test
 	public void testGetNumOccurrencesWithPopulatedEventCountArray() {
-		List<Integer> testEventCountList = getEmptyEventCountList();
+		List<Integer> testEventCountList = new ArrayList<>();
+		IntStream.range(0, LIMIT).forEach(x -> testEventCountList.add(0));
+		
 		testEventCountList.set(0, 10);
 		testEventCountList.set(60, 15);
 		testEventCountList.set(180, 7);
@@ -94,7 +99,6 @@ public class EventTrackerTest {
 			// Simulate user-signaling at various points in time
 			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
 			// Simulate scenario where current time = <LIMIT> s
-			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, LIMIT-1);
 			assertEquals(expectedEventCount, eventTracker.getNumOccurrences(numSecondsInTimeInterval));
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
@@ -117,32 +121,38 @@ public class EventTrackerTest {
 	@Test
 	public void testSignalEventOccurrence() {
 		try {
+			List<Integer> testEventCountList = new ArrayList<>();
+			IntStream.range(0, 5).forEach(i -> testEventCountList.add(0));
+			
 			eventTracker = PowerMockito.mock(EventTracker.class);
-			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, getEmptyEventCountList());
+			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
 			PowerMockito.doCallRealMethod().when(eventTracker).signalEventOccurrence();
 			PowerMockito.doCallRealMethod().when(eventTracker).getNumOccurrences(Matchers.anyInt());
 
-			// Simulate 10 incidents of user-signaling
+			// Simulate 10 incidents of user-signaling at time t = 5 s
 			IntStream.range(0, 10).forEach(i -> eventTracker.signalEventOccurrence());
-			// Simulate scenario where current time = 4 s
-			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, 4);
-			assertEquals(10, eventTracker.getNumOccurrences(5));
+			
+			// Simulate current time t = 10 s
+			IntStream.range(0, 5).forEach(i -> testEventCountList.add(0));
+			
+			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
+			assertEquals(10, eventTracker.getNumOccurrences(10));
+			
+			// Simulate current time t = 17 s
+			IntStream.range(0, 7).forEach(i -> testEventCountList.add(0));
+			
+			// Simulate 5 more incidents of user-signaling
+			IntStream.range(0, 5).forEach(i -> eventTracker.signalEventOccurrence());
 
-			// Simulate 10 more incidents of user-signaling
-			// (for a total of 20 incidents from start time)
-			IntStream.range(0, 10).forEach(i -> eventTracker.signalEventOccurrence());
-			// Simulate scenario where current time = 9 s
-			PowerMockito.field(EventTracker.class, "numSecondsSinceStartTime").set(eventTracker, 9);
-			assertEquals(20, eventTracker.getNumOccurrences(10));
+			// Simulate current time t = 20 s
+			IntStream.range(0, 3).forEach(i -> testEventCountList.add(0));
+			
+			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
+			assertEquals(5, eventTracker.getNumOccurrences(10));
 			
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
 	}
-	
-	// Test helper method used to mock private field <eventCountList> in EventTracker
-	// instance in test methods
-	private List<Integer> getEmptyEventCountList() {
-		return Arrays.stream(new int[LIMIT]).boxed().collect(Collectors.toList());
-	}
+
 }
