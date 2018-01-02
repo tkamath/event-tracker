@@ -21,19 +21,23 @@ public class EventTracker {
 			
 	
 	public EventTracker(int seconds) {
+		// Add empty entry to <eventCountList>
+		eventCountList.add(0);
 		timer = new Timer();
 		// Schedule task to run every second 
 		timer.schedule(new EventTrackerTask(), 0, seconds * 1000); // delay in milliseconds
 	}
 	
-	// Increment current time t by 1 s with each passing second
-	// (t is zero-indexed, to align with indexing of <eventCountList>)
+	// Until <LIMIT> seconds have passed since the start of the program,
+	// add one empty entry to <eventCountList> with each passing second
+	// Once <eventCountList> has reached <LIMIT> in size, with each passing
+	// second, remove the first entry and add an empty entry to the end
 	class EventTrackerTask extends TimerTask {
 		@Override
 		public void run() {
+			// If <eventCountList> size is <LIMIT>, remove first entry
 			if (eventCountList.size() == LIMIT) {
-				// Remove first entry of <eventCountList>
-				int firstElement = eventCountList.remove(0); 
+				eventCountList.remove(0);
 			}
 			// Append empty entry to <eventCountList>
 			eventCountList.add(0); 
@@ -46,10 +50,7 @@ public class EventTracker {
 	}
 	
 	// User can call this method to signal that event has occurred
-	public void signalEventOccurrence() {
-		if (eventCountList.isEmpty()) {
-			eventCountList.add(0);
-		}
+	public synchronized void signalEventOccurrence() {
 		int lastIndex = eventCountList.size() - 1;
 		eventCountList.set(lastIndex, eventCountList.get(lastIndex) + 1);
 	}
@@ -61,15 +62,22 @@ public class EventTracker {
 			throw new IllegalArgumentException(
 					"Number of seconds must be between 0 and " + LIMIT + " (inclusive)");
 		}
-		if (numSecondsInInterval == 0 || eventCountList.isEmpty()) {
-			return 0;
-		}
-
-		int rangeEndIndex = eventCountList.size();
 		// Set <rangeStartIndex> to 0 if number of seconds in user-requested time interval 
 		// exceeds number of entries in <eventCountList>
-		int rangeStartIndex = Math.max(0, rangeEndIndex - numSecondsInInterval);
-		return eventCountList.subList(rangeStartIndex, rangeEndIndex).stream().mapToInt(z -> z).sum();
+		if (numSecondsInInterval == 0) {
+			return 0;
+		}
+		synchronized (this) {
+			int rangeEndIndex = eventCountList.size();
+			if (rangeEndIndex == 0) {
+				return 0;
+			}
+			// Set <rangeStartIndex> to 0 if number of seconds in user-requested time interval 
+			// exceeds number of entries in <eventCountList>
+			int rangeStartIndex = Math.max(0, rangeEndIndex - numSecondsInInterval);
+			return eventCountList.subList(rangeStartIndex, rangeEndIndex).stream().mapToInt(z -> z).sum();
+		}
+		
 	}
 	
 }

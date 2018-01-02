@@ -63,16 +63,17 @@ public class EventTrackerTest {
 		assertEquals(0, eventTracker.getNumOccurrences(0));
 	}
 	
-	// When invoked with valid positive argument x > current time t, 
+	// When time t (since the start of the program) < LIMIT, and
+	// getNumOccurrences method is invoked with argument LIMIT >= x > t,
 	// getNumOccurrences method should return getNumOccurrences(t)
 	@Test
 	public void testGetNumOccurrencesForInputArgHigherThanCurrentTime() {
 		List<Integer> testEventCountList = new ArrayList<>();
-		// Simulate current time t = 9 s
+		// Simulate time t = 9 s
 		IntStream.range(0, 9).forEach(x -> testEventCountList.add(0));
 		// Simulate 100 instances of user-signaling at time t = 9 s
 		testEventCountList.add(100);
-		// Simulate current time t = 15 s
+		// Simulate time t = 15 s
 		IntStream.range(0, 5).forEach(x -> testEventCountList.add(0));
 		
 		try {
@@ -98,7 +99,6 @@ public class EventTrackerTest {
 		try {
 			// Simulate user-signaling at various points in time
 			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
-			// Simulate scenario where current time = <LIMIT> s
 			assertEquals(expectedEventCount, eventTracker.getNumOccurrences(numSecondsInTimeInterval));
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
@@ -132,19 +132,19 @@ public class EventTrackerTest {
 			// Simulate 10 incidents of user-signaling at time t = 5 s
 			IntStream.range(0, 10).forEach(i -> eventTracker.signalEventOccurrence());
 			
-			// Simulate current time t = 10 s
+			// Simulate time t = 10 s
 			IntStream.range(0, 5).forEach(i -> testEventCountList.add(0));
 			
 			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
 			assertEquals(10, eventTracker.getNumOccurrences(10));
 			
-			// Simulate current time t = 17 s
+			// Simulate time t = 17 s
 			IntStream.range(0, 7).forEach(i -> testEventCountList.add(0));
 			
 			// Simulate 5 more incidents of user-signaling
 			IntStream.range(0, 5).forEach(i -> eventTracker.signalEventOccurrence());
 
-			// Simulate current time t = 20 s
+			// Simulate time t = 20 s
 			IntStream.range(0, 3).forEach(i -> testEventCountList.add(0));
 			
 			PowerMockito.field(EventTracker.class, "eventCountList").set(eventTracker, testEventCountList);
